@@ -1,46 +1,40 @@
 const express = require('express');
-const cors = require('cors');
-const path = require('path');
+const crypto = require('crypto');
 const QRCode = require('qrcode');
+const path = require('path');
 const db = require('./database');
 
 const app = express();
-app.use(cors());
+const port = 3000;
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Generate QR Code Endpoint
-app.get('/api/generateQR/:roll_number', (req, res) => {
-    const rollNumber = req.params.roll_number;
-    db.get(`SELECT qr_hash, name FROM Users WHERE roll_number = ?`, [rollNumber], async (err, user) => {
-        if (!user) return res.status(404).json({ error: "Student not found" });
-        const qrImageContent = await QRCode.toDataURL(user.qr_hash);
-        res.json({ name: user.name, qrImage: qrImageContent });
-    });
-});
-
-// Guard Scan Endpoint (Anti-Passback Logic)
-app.post('/api/scanQR', (req, res) => {
-    const { qrHash, gateAction } = req.body; 
+// Fetch Student Data and Generate QR
+app.get('/api/generateQR/:rollNumber', (req, res) => {
+    const roll = req.params.rollNumber.toUpperCase();
     
-    db.get(`SELECT * FROM Users WHERE qr_hash = ?`, [qrHash], (err, user) => {
-        if (!user) return res.json({ success: false, message: "INVALID ID" });
+    db.get("SELECT * FROM Users WHERE roll_number = ?", [roll], async (err, row) => {
+        if (err) return res.status(500).json({ error: "DB Error" });
+        if (!row) return res.status(404).json({ error: "Student not found" });
 
-        if (gateAction === 'Entry' && user.current_status === 'Inside') {
-            return res.json({ success: false, message: "PASSBACK VIOLATION: Already Inside" });
-        }
-        if (gateAction === 'Exit' && user.current_status === 'Outside') {
-            return res.json({ success: false, message: "VIOLATION: User is not Inside" });
-        }
-
-        const newStatus = gateAction === 'Entry' ? 'Inside' : 'Outside';
-
-        db.run(`UPDATE Users SET current_status = ? WHERE roll_number = ?`, [newStatus, user.roll_number], () => {
-            db.run(`INSERT INTO AccessLogs (roll_number, scan_type) VALUES (?, ?)`, [user.roll_number, gateAction], () => {
-                res.json({ success: true, message: `ACCESS GRANTED: ${user.name}` });
+        try {
+            const qrImage = await QRCode.toDataURL(row.qr_hash);
+            
+            // KEY SYNC: We map 'row.photo' and 'row.department' to the JSON keys
+            res.json({
+                name: row.name,
+                rollNumber: row.roll_number,
+                department: row.department,
+                photoUrl: row.photo, // Maps database 'photo' to frontend 'photoUrl'
+                qrImage: qrImage
             });
-        });
+        } catch (e) {
+            res.status(500).json({ error: "QR Error" });
+        }
     });
 });
 
-app.listen(3000, () => console.log('Server is running on http://localhost:3000'));
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+});
