@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head><title>Digital ID</title></head>
+<body style="text-align: center; font-family: sans-serif; padding-top: 50px;">
+    <h1>Student Digital ID</h1>
+    <h2 id="name">Loading...</h2>
+    <img id="qr" src="" style="width: 250px; display: none; margin: 0 auto;">
+    
+    <script>
+        fetch('/api/generateQR/2026CS01')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('name').innerText = data.name;
+                document.getElementById('qr').src = data.qrImage;
+                document.getElementById('qr').style.display = 'block';
+            });
+    </script>
+</body>
+</html>

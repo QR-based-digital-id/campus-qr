@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Guard Scanner</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body style="text-align: center; font-family: sans-serif;">
+    <h1>Gate Control</h1>
+    <h3>Mode: <span id="mode">Entry</span></h3>
+    <button onclick="setMode('Entry')">Set ENTRY</button>
+    <button onclick="setMode('Exit')">Set EXIT</button>
+    
+    <div id="reader" style="width: 300px; margin: 20px auto;"></div>
+    <h2 id="status">Awaiting Scan...</h2>
+
+    <script>
+        let currentMode = 'Entry';
+        let isProcessing = false;
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('mode').innerText = mode;
+        }
+
+        function onScan(decodedText) {
+            if (isProcessing) return;
+            isProcessing = true;
+            document.getElementById('status').innerText = "Verifying...";
+
+            fetch('/api/scanQR', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ qrHash: decodedText, gateAction: currentMode })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('status').innerText = data.message;
+                setTimeout(() => { 
+                    document.getElementById('status').innerText = "Awaiting Scan..."; 
+                    isProcessing = false; 
+                }, 3000);
+            });
+        }
+
+        new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 }, false).render(onScan);
+    </script>
+</body>
+</html>
