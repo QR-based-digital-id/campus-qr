@@ -1,19 +1,103 @@
 <!DOCTYPE html>
-<html>
-<head><title>Digital ID</title></head>
-<body style="text-align: center; font-family: sans-serif; padding-top: 50px;">
-    <h1>Student Digital ID</h1>
-    <h2 id="name">Loading...</h2>
-    <img id="qr" src="" style="width: 250px; display: none; margin: 0 auto;">
-    
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Digital ID</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background-color: #f4f4f9; }
+        .card { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 15px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            display: inline-block; 
+            max-width: 400px;
+            width: 100%;
+        }
+        input { 
+            padding: 12px; 
+            margin: 15px 0; 
+            border-radius: 5px; 
+            border: 1px solid #ccc; 
+            width: 80%; 
+            font-size: 16px;
+        }
+        button { 
+            padding: 12px 25px; 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 16px;
+        }
+        button:hover { background-color: #0056b3; }
+        #qr-container { margin-top: 25px; display: none; }
+        img { border: 1px solid #ddd; padding: 10px; background: white; border-radius: 5px; }
+        .warning { color: #d9534f; font-weight: bold; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Student Digital ID</h1>
+        <p>Enter your Roll Number to generate your Gate Pass</p>
+        
+        <input type="text" id="rollInput" placeholder="Enter Roll Number (e.g. B24CS1110)">
+        <br>
+        <button onclick="fetchQR()">Generate ID</button>
+
+        <div id="qr-container">
+            <h2 id="stu-name"></h2>
+            <p id="stu-status" class="warning"></p>
+            <img id="qr-image" src="" alt="QR Code" width="250">
+            <p style="color: #666; margin-top: 10px;"><small>Scan this at the guard station.</small></p>
+        </div>
+    </div>
+
     <script>
-        fetch('/api/generateQR/2026CS01')
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('name').innerText = data.name;
-                document.getElementById('qr').src = data.qrImage;
-                document.getElementById('qr').style.display = 'block';
-            });
+        function fetchQR() {
+            const rollNumber = document.getElementById('rollInput').value.trim();
+            
+            if (!rollNumber) {
+                alert("Please enter a roll number!");
+                return;
+            }
+
+            // Fetch data dynamically based on what you typed
+            fetch(`/api/generateQR/${rollNumber}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        document.getElementById('qr-container').style.display = 'none';
+                    } else {
+                        // Display the data
+                        document.getElementById('qr-container').style.display = 'block';
+                        document.getElementById('stu-name').innerText = data.name;
+                        
+                        // Handle QR Image
+                        if (data.qrImage) {
+                            document.getElementById('qr-image').src = data.qrImage;
+                            document.getElementById('qr-image').style.display = 'inline-block';
+                        } else {
+                            document.getElementById('qr-image').style.display = 'none';
+                        }
+
+                        // Handle Warnings (e.g., Graduated status)
+                        if (data.warning) {
+                            document.getElementById('stu-status').innerText = data.warning;
+                        } else {
+                            document.getElementById('stu-status').innerText = "";
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("Error fetching QR:", err);
+                    alert("Failed to connect to server. Is it running?");
+                });
+        }
     </script>
 </body>
 </html>

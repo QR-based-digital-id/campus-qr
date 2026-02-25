@@ -1,17 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Guard Scanner</title>
+    <title>Guard Scanner - SRS V2.0</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        .panel { 
+            border: 2px solid #333; 
+            margin: 20px auto; 
+            padding: 20px; 
+            max-width: 400px; 
+            border-radius: 10px; 
+            display: none; /* Hidden by default */
+        }
+        .student-photo { 
+            width: 150px; 
+            height: 150px; 
+            object-fit: cover; 
+            border-radius: 8px; 
+            border: 1px solid #ccc;
+        }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
 </head>
-<body style="text-align: center; font-family: sans-serif;">
-    <h1>Gate Control</h1>
-    <h3>Mode: <span id="mode">Entry</span></h3>
-    <button onclick="setMode('Entry')">Set ENTRY</button>
-    <button onclick="setMode('Exit')">Set EXIT</button>
+<body style="text-align: center; font-family: sans-serif; background-color: #f4f4f4;">
+    <h1>Gate Control System</h1>
+    <h3>Current Mode: <span id="mode">Entry</span></h3>
     
-    <div id="reader" style="width: 300px; margin: 20px auto;"></div>
+    <button onclick="setMode('Entry')" style="padding: 10px;">Set ENTRY</button>
+    <button onclick="setMode('Exit')" style="padding: 10px;">Set EXIT</button>
+    
+    <div id="reader" style="width: 350px; margin: 20px auto; background: white;"></div>
+    
     <h2 id="status">Awaiting Scan...</h2>
+
+    <div id="verification-panel" class="panel">
+        <img id="student-photo" src="" class="student-photo" alt="Student Photo">
+        <h2 id="student-name"></h2>
+        <p><strong>Roll Number:</strong> <span id="student-roll"></span></p>
+        <p><strong>Account Status:</strong> <span id="student-status"></span></p>
+        <p><strong>Log:</strong> <span id="log-info"></span></p>
+    </div>
 
     <script>
         let currentMode = 'Entry';
@@ -25,7 +54,13 @@
         function onScan(decodedText) {
             if (isProcessing) return;
             isProcessing = true;
-            document.getElementById('status').innerText = "Verifying...";
+            
+            const statusEl = document.getElementById('status');
+            const panel = document.getElementById('verification-panel');
+            
+            statusEl.innerText = "Verifying Identity...";
+            statusEl.className = "";
+            panel.style.display = "none";
 
             fetch('/api/scanQR', {
                 method: 'POST',
@@ -34,11 +69,33 @@
             })
             .then(res => res.json())
             .then(data => {
-                document.getElementById('status').innerText = data.message;
+                if (data.success) {
+                    statusEl.innerText = "ACCESS GRANTED";
+                    statusEl.className = "success";
+                    
+                    // Populate Details (SRS FR-3)
+                    document.getElementById('student-photo').src = data.user.photo;
+                    document.getElementById('student-name').innerText = data.user.name;
+                    document.getElementById('student-roll').innerText = data.user.roll_number;
+                    document.getElementById('student-status').innerText = data.user.accountStatus;
+                    document.getElementById('log-info').innerText = `${currentMode} recorded at ${new Date().toLocaleTimeString()}`;
+                    
+                    panel.style.display = "block";
+                } else {
+                    statusEl.innerText = "ACCESS DENIED: " + data.message;
+                    statusEl.className = "error";
+                }
+
+                // Reset after 5 seconds to allow guard to see details
                 setTimeout(() => { 
-                    document.getElementById('status').innerText = "Awaiting Scan..."; 
+                    statusEl.innerText = "Awaiting Scan..."; 
+                    statusEl.className = "";
                     isProcessing = false; 
-                }, 3000);
+                }, 5000);
+            })
+            .catch(err => {
+                statusEl.innerText = "System Error!";
+                isProcessing = false;
             });
         }
 
