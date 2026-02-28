@@ -22,7 +22,9 @@
         .body-content { padding: 20px; text-align: center; }
         .visuals { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 10px; }
         .student-photo { width: 100px; height: 125px; object-fit: cover; border: 2px solid #000; }
-        #qr { width: 105px; height: 105px; border: 1px solid #000; }
+        
+        /* Fixed: Changed #qr to #qrImg to match the HTML tag below */
+        #qrImg { width: 105px; height: 105px; border: 1px solid #000; }
 
         .name { font-size: 18px; font-weight: 900; color: #000; margin: 5px 0; text-transform: uppercase; }
         .dept { font-size: 12px; font-weight: bold; color: #444; margin-bottom: 10px; }
@@ -74,30 +76,41 @@
             return;
         }
 
-        // Fetching data from your Express API
         fetch(`/api/generateQR/${roll}`)
             .then(res => {
                 if (!res.ok) throw new Error("Student not found");
                 return res.json();
             })
             .then(data => {
-                // Show the yellow ID card
                 card.style.display = 'block';
 
-                // Map data from the server to the HTML elements
-                // Note: 'data.rollNumber' matches the key we set in server.js
                 dispName.innerText = data.name || "N/A";
-                dispRoll.innerText = data.rollNumber || roll;
-                dispDept.innerText = data.department || "Engineering";
+                dispRoll.innerText = data.roll_number || roll;
+                dispDept.innerText = data.department || "Computer Science";
                 
-                // Set the QR code image string
-                qrImg.src = data.qrImage;
+                // 1. Handle the QR Code gracefully
+                if (data.qrImage) {
+                    qrImg.src = data.qrImage;
+                    qrImg.style.display = "block"; // Show if valid
+                } else {
+                    qrImg.style.display = "none"; // Hide if null
+                }
 
-                // Set the student photo path (e.g., /images/archie.jpg)
-                // If no photo exists in the DB, it defaults to a placeholder
-                if (data.photoUrl) {
-                    photo.src = data.photoUrl;
-                } 
+                // 2. Handle the Photo gracefully
+                if (data.photo) {
+                    photo.src = data.photo;
+                    photo.style.display = "block"; // Show if valid
+                } else {
+                    photo.style.display = "none"; // Hide if missing
+                }
+
+                // 3. Show "Graduated" warning on the ID card!
+                if (data.warning) {
+                    dispDept.innerText = data.warning;
+                    dispDept.style.color = "red"; // Make it stand out
+                } else {
+                    dispDept.style.color = "#444"; // Normal color for active students
+                }
             })
             .catch(err => {
                 console.error("Fetch error:", err);
@@ -106,7 +119,6 @@
             });
     }
 
-    // Optional: Allow pressing "Enter" to trigger the generation
     document.getElementById('rollInput').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             generateID();

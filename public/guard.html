@@ -55,10 +55,11 @@
             statusEl.className = "";
             panel.style.display = "none";
 
+            // Fixed: Changed qr_hash and mode to match your V2.0 backend variables
             fetch('/api/scanQR', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ qr_hash: decodedText, mode: currentMode })
+                body: JSON.stringify({ qrHash: decodedText, gateAction: currentMode })
             })
             .then(res => res.json())
             .then(data => {
@@ -74,7 +75,7 @@
                     
                     panel.style.display = "block";
                 } else {
-                    statusEl.innerText = "ACCESS DENIED: " + data.message;
+                    statusEl.innerText = data.message;
                     statusEl.className = "error";
                 }
 

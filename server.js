@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const crypto = require('crypto');
 const QRCode = require('qrcode');
 const path = require('path');
@@ -13,12 +14,11 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // --- 1. STUDENT FEATURE: Generate QR Code ---
-// (Kept from your previous code so student.html works)
 app.get('/api/generateQR/:roll_number', (req, res) => {
     const rollNumber = req.params.roll_number;
     
-    // We select name, role, and qr_hash to confirm identity
-    db.get(`SELECT qr_hash, name, role, accountStatus FROM Users WHERE roll_number = ?`, [rollNumber], async (err, user) => {
+    // Select ALL columns (*) to ensure the photo and roll_number are retrieved
+    db.get(`SELECT * FROM Users WHERE roll_number = ?`, [rollNumber], async (err, user) => {
         if (err || !user) return res.status(404).json({ error: "Student not found" });
         
         // If the student is Graduated, we can still show the QR, but warn them
@@ -30,14 +30,25 @@ app.get('/api/generateQR/:roll_number', (req, res) => {
             });
         }
 
-        // Generate the QR image from the hash
-        const qrImageContent = await QRCode.toDataURL(user.qr_hash);
-        res.json({ name: user.name, qrImage: qrImageContent });
+        try {
+            // Generate the QR image from the hash
+            const qrImageContent = await QRCode.toDataURL(user.qr_hash);
+            
+            // Deliver all necessary data to the frontend
+            res.json({ 
+                name: user.name,
+                roll_number: user.roll_number,
+                photo: user.photo,
+                department: "Computer Science",
+                qrImage: qrImageContent 
+            });
+        } catch (qrErr) {
+            res.status(500).json({ error: "Failed to generate QR" });
+        }
     });
 });
 
 // --- 2. GUARD FEATURE: Scan & Verify ---
-// (Updated with SRS V2.0 Logic: Photos, Status, Logs)
 app.post('/api/scanQR', (req, res) => {
     const { qrHash, gateAction } = req.body; // gateAction is 'Entry' or 'Exit'
     
@@ -51,8 +62,6 @@ app.post('/api/scanQR', (req, res) => {
         }
 
         // 3. CHECK: Anti-Passback (SRS FR-7)
-        // If trying to Enter, they must be 'Outside'. 
-        // If trying to Exit, they must be 'Inside'.
         if (gateAction === 'Entry' && user.current_status === 'Inside') {
             return res.json({ success: false, message: "PASSBACK VIOLATION: Already Inside Campus" });
         }
@@ -80,7 +89,7 @@ app.post('/api/scanQR', (req, res) => {
             user: {
                 name: user.name,
                 roll_number: user.roll_number,
-                photo: user.photo,        // Sends the image path (e.g., 'images/aarushi.jpg')
+                photo: user.photo,        
                 accountStatus: user.accountStatus
             }
         });
