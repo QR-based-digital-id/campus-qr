@@ -3,101 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Digital ID</title>
+    <title>IITJ Digital ID - Official</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background-color: #f4f4f9; }
-        .card { 
-            background: white; 
-            padding: 40px; 
-            border-radius: 15px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            display: inline-block; 
-            max-width: 400px;
-            width: 100%;
-        }
-        input { 
-            padding: 12px; 
-            margin: 15px 0; 
-            border-radius: 5px; 
-            border: 1px solid #ccc; 
-            width: 80%; 
-            font-size: 16px;
-        }
-        button { 
-            padding: 12px 25px; 
-            background-color: #007bff; 
-            color: white; 
-            border: none; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            font-size: 16px;
-        }
-        button:hover { background-color: #0056b3; }
-        #qr-container { margin-top: 25px; display: none; }
-        img { border: 1px solid #ddd; padding: 10px; background: white; border-radius: 5px; }
-        .warning { color: #d9534f; font-weight: bold; margin-bottom: 10px; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #d1d1d1; padding: 40px; display: flex; flex-direction: column; align-items: center; }
+        .search-panel { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 340px; margin-bottom: 20px; text-align: center; }
+        input { width: 80%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; text-align: center; }
+        button { width: 85%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+        /* --- Official Yellow Card UI --- */
+        .id-card { width: 340px; background: white; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); overflow: hidden; border: 1.5px solid #999; display: none; }
+        .header { background-color: #ffde00; padding: 10px; display: flex; align-items: center; border-bottom: 2px solid #000; }
+        .logo { width: 50px; height: 50px; margin-left: 5px; }
+        .header-text { flex-grow: 1; text-align: center; }
+        .hindi { font-size: 11px; font-weight: bold; margin: 0; }
+        .english { font-size: 11px; font-weight: bold; margin: 0; text-transform: uppercase; }
+        .address { font-size: 8px; margin: 0; }
+
+        .body-content { padding: 20px; text-align: center; }
+        .visuals { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 10px; }
+        .student-photo { width: 100px; height: 125px; object-fit: cover; border: 2px solid #000; }
+        #qr { width: 105px; height: 105px; border: 1px solid #000; }
+
+        .name { font-size: 18px; font-weight: 900; color: #000; margin: 5px 0; text-transform: uppercase; }
+        .dept { font-size: 12px; font-weight: bold; color: #444; margin-bottom: 10px; }
+        .roll-box { font-size: 14px; font-weight: bold; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 5px 0; background-color: #f0f0f0; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>Student Digital ID</h1>
-        <p>Enter your Roll Number to generate your Gate Pass</p>
-        
-        <input type="text" id="rollInput" placeholder="Enter Roll Number (e.g. B24CS1110)">
-        <br>
-        <button onclick="fetchQR()">Generate ID</button>
+    <div class="search-panel">
+        <h2>Gate Pass Generator</h2>
+        <input type="text" id="rollInput" placeholder="Enter Roll Number">
+        <button onclick="generateID()">Generate ID</button>
+    </div>
 
-        <div id="qr-container">
-            <h2 id="stu-name"></h2>
-            <p id="stu-status" class="warning"></p>
-            <img id="qr-image" src="" alt="QR Code" width="250">
-            <p style="color: #666; margin-top: 10px;"><small>Scan this at the guard station.</small></p>
+    <div class="id-card" id="card">
+        <div class="header">
+            <img src="https://iitj.ac.in/PageImages/Pages/07-2024/3ae34ac0-29a1-43bb-8e62-72b7e3ed14fe.jpg" alt="IITJ" class="logo">
+            <div class="header-text">
+                <p class="hindi">भारतीय प्रौद्योगिकी संस्थान जोधपुर</p>
+                <p class="english">Indian Institute of Technology Jodhpur</p>
+                <p class="address">NH 62, Karwar, Jodhpur - 342030</p>
+            </div>
+        </div>
+        <div class="body-content">
+            <div class="visuals">
+                <img id="photo" class="student-photo" src="" alt="Student">
+                <img id="qrImg" src="" alt="QR">
+            </div>
+            <div class="name" id="dispName"></div>
+            <div class="dept" id="dispDept"></div>
+            <div class="roll-box">Roll No: <span id="dispRoll"></span></div>
         </div>
     </div>
 
-    <script>
-        function fetchQR() {
-            const rollNumber = document.getElementById('rollInput').value.trim();
-            
-            if (!rollNumber) {
-                alert("Please enter a roll number!");
-                return;
-            }
+<script>
+    function generateID() {
+        const rollInput = document.getElementById('rollInput');
+        const roll = rollInput.value.trim().toUpperCase();
+        
+        const card = document.getElementById('card');
+        const dispName = document.getElementById('dispName');
+        const dispRoll = document.getElementById('dispRoll');
+        const dispDept = document.getElementById('dispDept');
+        const qrImg = document.getElementById('qrImg');
+        const photo = document.getElementById('photo');
 
-            // Fetch data dynamically based on what you typed
-            fetch(`/api/generateQR/${rollNumber}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.error) {
-                        alert(data.error);
-                        document.getElementById('qr-container').style.display = 'none';
-                    } else {
-                        // Display the data
-                        document.getElementById('qr-container').style.display = 'block';
-                        document.getElementById('stu-name').innerText = data.name;
-                        
-                        // Handle QR Image
-                        if (data.qrImage) {
-                            document.getElementById('qr-image').src = data.qrImage;
-                            document.getElementById('qr-image').style.display = 'inline-block';
-                        } else {
-                            document.getElementById('qr-image').style.display = 'none';
-                        }
-
-                        // Handle Warnings (e.g., Graduated status)
-                        if (data.warning) {
-                            document.getElementById('stu-status').innerText = data.warning;
-                        } else {
-                            document.getElementById('stu-status').innerText = "";
-                        }
-                    }
-                })
-                .catch(err => {
-                    console.error("Error fetching QR:", err);
-                    alert("Failed to connect to server. Is it running?");
-                });
+        if (!roll) {
+            alert("Please enter a Roll Number");
+            return;
         }
-    </script>
+
+        // Fetching data from your Express API
+        fetch(`/api/generateQR/${roll}`)
+            .then(res => {
+                if (!res.ok) throw new Error("Student not found");
+                return res.json();
+            })
+            .then(data => {
+                // Show the yellow ID card
+                card.style.display = 'block';
+
+                // Map data from the server to the HTML elements
+                // Note: 'data.rollNumber' matches the key we set in server.js
+                dispName.innerText = data.name || "N/A";
+                dispRoll.innerText = data.rollNumber || roll;
+                dispDept.innerText = data.department || "Engineering";
+                
+                // Set the QR code image string
+                qrImg.src = data.qrImage;
+
+                // Set the student photo path (e.g., /images/archie.jpg)
+                // If no photo exists in the DB, it defaults to a placeholder
+                if (data.photoUrl) {
+                    photo.src = data.photoUrl;
+                } 
+            })
+            .catch(err => {
+                console.error("Fetch error:", err);
+                alert("Error: " + err.message);
+                card.style.display = 'none';
+            });
+    }
+
+    // Optional: Allow pressing "Enter" to trigger the generation
+    document.getElementById('rollInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            generateID();
+        }
+    });
+</script>
 </body>
 </html>

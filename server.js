@@ -1,7 +1,7 @@
 const express = require('express');
-const cors = require('cors');
-const path = require('path');
+const crypto = require('crypto');
 const QRCode = require('qrcode');
+const path = require('path');
 const db = require('./database');
 
 const app = express();
