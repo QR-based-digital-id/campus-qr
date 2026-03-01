@@ -50,7 +50,8 @@ app.get('/api/generateQR/:roll_number', (req, res) => {
 
 // --- 2. GUARD FEATURE: Scan & Verify ---
 app.post('/api/scanQR', (req, res) => {
-    const { qrHash, gateAction } = req.body; // gateAction is 'Entry' or 'Exit'
+    // MODIFIED: Extracted 'location' from the incoming frontend request
+    const { qrHash, gateAction, location } = req.body; 
     
     // 1. Find User by Hash
     db.get(`SELECT * FROM Users WHERE qr_hash = ?`, [qrHash], (err, user) => {
@@ -71,21 +72,24 @@ app.post('/api/scanQR', (req, res) => {
 
         // 4. ACTION: Update Status & Log It
         const newStatus = gateAction === 'Entry' ? 'Inside' : 'Outside';
-        const location = gateAction === 'Entry' ? 'Campus Main Gate' : 'Main Gate (Leaving)';
+        
+        // MODIFIED: Use the location sent from the dropdown, fallback to 'Campus' if undefined
+        const logLocation = location || 'Campus'; 
 
         db.serialize(() => {
             // Update the user's current location status
             db.run(`UPDATE Users SET current_status = ? WHERE roll_number = ?`, [newStatus, user.roll_number]);
             
-            // Add a new log entry
+            // Add a new log entry using the extracted location
             db.run(`INSERT INTO AccessLogs (roll_number, scan_type, location) VALUES (?, ?, ?)`, 
-                   [user.roll_number, gateAction, location]);
+                   [user.roll_number, gateAction, logLocation]);
         });
 
         // 5. SUCCESS: Return details + PHOTO to the Guard UI (SRS FR-3)
         res.json({ 
             success: true, 
             message: `ACCESS GRANTED`,
+            location: logLocation, // MODIFIED: Send location back so the UI can display it
             user: {
                 name: user.name,
                 roll_number: user.roll_number,

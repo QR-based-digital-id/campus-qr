@@ -4,24 +4,67 @@
     <title>Guard Scanner - SRS V2.0</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { text-align: center; font-family: sans-serif; background-color: #f4f4f4; }
+        body { text-align: center; font-family: sans-serif; background-color: #f4f4f4; padding: 20px; }
         .panel { 
             border: 2px solid #333; margin: 20px auto; padding: 20px; 
             max-width: 400px; border-radius: 10px; display: none; background: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         .student-photo { 
             width: 150px; height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc;
         }
-        .success { color: green; font-weight: bold; }
-        .error { color: red; font-weight: bold; }
+        .success { color: green; font-weight: bold; font-size: 1.2em; }
+        .error { color: red; font-weight: bold; font-size: 1.2em; }
+        
+        /* New styling for the destination selector */
+        #location-container {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 350px;
+            margin: 10px auto;
+            border: 1px solid #ddd;
+            display: none; /* Only shows during Exit mode */
+        }
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #007bff;
+            width: 80%;
+            margin-top: 5px;
+        }
+        .mode-btn {
+            padding: 12px 24px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .mode-btn:hover { opacity: 0.8; }
     </style>
 </head>
 <body>
     <h1>Gate Control System</h1>
-    <h3>Current Mode: <span id="mode">Entry</span></h3>
+    <h3>Current Mode: <span id="mode" style="text-transform: uppercase;">Entry</span></h3>
     
-    <button onclick="setMode('Entry')" style="padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Set ENTRY</button>
-    <button onclick="setMode('Exit')" style="padding: 10px; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">Set EXIT</button>
+    <div>
+        <button onclick="setMode('Entry')" class="mode-btn" style="background-color: #007bff;">Set ENTRY</button>
+        <button onclick="setMode('Exit')" class="mode-btn" style="background-color: #dc3545;">Set EXIT</button>
+    </div>
+
+    <div id="location-container">
+        <label for="locationSelect"><strong>Destination:</strong></label><br>
+        <select id="locationSelect">
+            <option value="Market">Market / City</option>
+            <option value="Home">Going Home</option>
+            <option value="Medical">Medical / Emergency</option>
+            <option value="Official">Official Work</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
     
     <div id="reader" style="width: 350px; margin: 20px auto; background: white;"></div>
     <h2 id="status">Awaiting Scan...</h2>
@@ -41,25 +84,33 @@
         function setMode(mode) {
             currentMode = mode;
             document.getElementById('mode').innerText = mode;
+            
+            // Show destination options only if we are in EXIT mode
+            const locContainer = document.getElementById('location-container');
+            locContainer.style.display = (mode === 'Exit') ? 'block' : 'none';
         }
 
-        // This runs when the camera sees a QR code
         function onScanSuccess(decodedText) {
             if (isProcessing) return;
             isProcessing = true;
             
             const statusEl = document.getElementById('status');
             const panel = document.getElementById('verification-panel');
+            const selectedLoc = document.getElementById('locationSelect').value;
             
             statusEl.innerText = "Verifying Identity...";
             statusEl.className = "";
             panel.style.display = "none";
 
-            // Fixed: Changed qr_hash and mode to match your V2.0 backend variables
+            // Sending qrHash, gateAction, and our location data to the backend
             fetch('/api/scanQR', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ qrHash: decodedText, gateAction: currentMode })
+                body: JSON.stringify({ 
+                    qrHash: decodedText, 
+                    gateAction: currentMode,
+                    location: currentMode === 'Exit' ? selectedLoc : 'Campus' // Using 'location' field
+                })
             })
             .then(res => res.json())
             .then(data => {
@@ -71,7 +122,7 @@
                     document.getElementById('student-name').innerText = data.user.name;
                     document.getElementById('student-roll').innerText = data.user.roll_number;
                     document.getElementById('student-status').innerText = data.user.accountStatus;
-                    document.getElementById('log-info').innerText = `${currentMode} recorded at ${new Date().toLocaleTimeString()}`;
+                    document.getElementById('log-info').innerText = `${currentMode} to ${data.location || 'Campus'} at ${new Date().toLocaleTimeString()}`;
                     
                     panel.style.display = "block";
                 } else {
@@ -79,7 +130,6 @@
                     statusEl.className = "error";
                 }
 
-                // Wait 4 seconds so the guard can read it, then reset
                 setTimeout(() => { 
                     statusEl.innerText = "Awaiting Scan..."; 
                     statusEl.className = "";
@@ -94,9 +144,8 @@
             });
         }
 
-        // Initialize the camera scanner UI
         let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
-        html5QrcodeScanner.render(onScanSuccess, (err) => { /* ignore background scan errors */ });
+        html5QrcodeScanner.render(onScanSuccess);
     </script>
 </body>
 </html>
