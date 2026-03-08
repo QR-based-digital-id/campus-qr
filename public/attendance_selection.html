@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Subject - IITJ</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f6f9; display: flex; flex-direction: column; align-items: center; height: 100vh; }
+        .header { background-color: #003366; width: 100%; color: white; padding: 15px 0; text-align: center; border-bottom: 4px solid #ffcc00; }
+        .box { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; margin-top: 80px; width: 350px; border-top: 4px solid #003366;}
+        h2 { color: #003366; margin-bottom: 20px; }
+        select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; margin-bottom: 25px; outline: none; }
+        button { background-color: #003366; color: white; border: none; padding: 12px 25px; border-radius: 5px; font-size: 16px; cursor: pointer; width: 100%; transition: 0.3s; }
+        button:hover { background-color: #002244; }
+        .back-link { display: inline-block; margin-top: 15px; color: #666; text-decoration: none; font-size: 14px; }
+        .back-link:hover { color: #003366; text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>IIT Jodhpur Academic Portal</h2>
+    </div>
+
+    <div class="box">
+        <h2>Select Subject</h2>
+        <select id="subjectSelect">
+            <option value="PRML">Pattern Recognition & Machine Learning (PRML)</option>
+            <option value="Thermodynamics">Thermodynamics</option>
+            <option value="Software_Engineering">Software Engineering</option>
+        </select>
+        <button onclick="startScanner()">Initialize Scanner</button>
+        <a href="index.html" class="back-link">← Back to Dashboard</a>
+    </div>
+
+    <script>
+        function startScanner() {
+            const subject = document.getElementById('subjectSelect').value;
+            window.location.href = `attendance_scanner.html?subject=${subject}`;
+        }
+    </script>
+
+</body>
+</html>
