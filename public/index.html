@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IITJ Campus System</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f6f9; color: #333; }
+        .header { background-color: #003366; color: white; padding: 20px; text-align: center; border-bottom: 5px solid #ffcc00; }
+        .header img { height: 60px; vertical-align: middle; margin-right: 15px; }
+        .header h1 { display: inline-block; vertical-align: middle; margin: 0; font-size: 24px; }
+        .container { max-width: 800px; margin: 50px auto; text-align: center; }
+        .card-container { display: flex; justify-content: center; gap: 30px; margin-top: 40px; }
+        .card { background: white; padding: 40px 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 300px; transition: 0.3s; cursor: pointer; border-top: 4px solid #003366; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .card h2 { color: #003366; margin-bottom: 15px; }
+        .card p { color: #666; margin-bottom: 25px; font-size: 14px; }
+        .btn { background-color: #003366; color: white; border: none; padding: 12px 25px; border-radius: 5px; font-size: 16px; cursor: pointer; transition: 0.3s; width: 100%; }
+        .btn:hover { background-color: #002244; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Indian Institute of Technology Jodhpur</h1>
+    </div>
+
+    <div class="container">
+        <h2>Campus Access & Attendance Portal</h2>
+        
+        <div class="card-container">
+            <div class="card" onclick="window.location.href='guard.html'">
+                <h2>Guard Scanner</h2>
+                <p>Manage campus entry and exit logs at the security gates.</p>
+                <button class="btn">Open Guard Portal</button>
+            </div>
+            
+            <div class="card" onclick="window.location.href='attendance_selection.html'">
+                <h2>Attendance Scanner</h2>
+                <p>Mark student attendance for specific academic courses.</p>
+                <button class="btn">Open Attendance Portal</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
