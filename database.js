@@ -23,6 +23,17 @@ db.serialize(() => {
         location TEXT                -- Location indicator (Market, Home, etc.)
     )`);
 
+    const subjects = ['PRML', 'Thermodynamics', 'Software_Engineering'];
+    subjects.forEach(subject => {
+        db.run(`CREATE TABLE IF NOT EXISTS attendance_${subject} (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            roll_number TEXT,  /* <-- CHANGED THIS from student_hash */
+            date TEXT,
+            status INTEGER DEFAULT 1,
+            UNIQUE(roll_number, date) /* <-- CHANGED THIS */
+        )`);
+    });
+
     // Insert Alpha Team members
     db.get("SELECT COUNT(*) as count FROM Users", (err, row) => {
         if (row.count === 0) {
