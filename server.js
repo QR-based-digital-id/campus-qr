@@ -100,4 +100,43 @@ app.post('/api/scanQR', (req, res) => {
     });
 });
 
+app.post('/mark-attendance', (req, res) => {
+    const { qr_hash, subject } = req.body;
+    
+    // Get today's date in YYYY-MM-DD format to represent the current session
+    const today = new Date().toISOString().split('T')[0]; 
+    const tableName = `attendance_${subject}`;
+
+    // 1. Verify the QR hash belongs to a valid student in your main Users table
+    db.get(`SELECT * FROM Users WHERE qr_hash = ?`, [qr_hash], (err, student) => {
+        if (err || !student) {
+            return res.json({ success: false, message: 'Invalid QR Code. Student not found.' });
+        }
+
+        // 2. Check if the student is already marked present today using their ROLL NUMBER
+        db.get(`SELECT * FROM ${tableName} WHERE roll_number = ? AND date = ?`, [student.roll_number, today], (err, row) => {
+            if (row) {
+                // Student already scanned today
+                return res.json({ 
+                    success: false, 
+                    message: 'Invalid: Student already marked present for this class session.',
+                    student: student
+                });
+            } else {
+                // 3. Mark the student as present using their ROLL NUMBER
+                db.run(`INSERT INTO ${tableName} (roll_number, date, status) VALUES (?, ?, 1)`, [student.roll_number, today], function(err) {
+                    if (err) {
+                        return res.json({ success: false, message: 'Database error occurred.' });
+                    }
+                    return res.json({
+                        success: true,
+                        message: 'Present',
+                        student: student
+                    });
+                });
+            }
+        });
+    });
+});
+
 app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
