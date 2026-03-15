@@ -20,3 +20,21 @@ Security Logic (SRS FR-5/7):
 **Contributors**  
 -Aarushi Atul Singh  
 -Archie Singh
+
+**For Attendance**
+
+**Install Dependencies:**  
+Make sure you have the necessary tools for running the server and handling QR generation and scanning.
+
+**Initialize the Database:**  
+Run `node database.js` to create the attendance database schema and seed the test student data required for the system.
+
+**New Features in V2.0**  
+Official UI: Integrated a clean attendance dashboard with real-time QR code generation for each class session.
+
+Security Logic:  
+- **Duplicate Scan Prevention:** Prevents students from marking attendance more than once for the same session.  
+- **Session Validation:** Ensures that attendance is recorded only for the currently active class session.  
+- **Student Verification:** Validates roll numbers before marking attendance to avoid unauthorized entries.  
+- **QR Code Integration:** Generates unique QR codes for each session to ensure secure attendance marking.
+
