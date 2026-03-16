@@ -139,4 +139,8 @@ app.post('/mark-attendance', (req, res) => {
     });
 });
 
-app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
+// Export the app for testing, but only listen to the port if running directly
+if (require.main === module) {
+    app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
+}
+module.exports = app;

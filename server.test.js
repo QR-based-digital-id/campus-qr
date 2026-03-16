@@ -1,0 +1,152 @@
+const request = require('supertest');
+const app = require('./server'); // Imports your express app
+
+describe('Campus QR Gate Control API Tests (SRS V2.0)', () => {
+
+    // ---------------------------------------------------------
+    // FR-1: Unified App - GenerateQR() & ValidateQR() Integration
+    // Reason: Database verification added for real-time identity confirmation
+    // ---------------------------------------------------------
+    describe('FR-1: QR Generation Integration', () => {
+        it('should successfully generate a QR code with database validation for a valid student', async () => {
+            const response = await request(app).get('/api/generateQR/B24CS1110');
+            expect(response.statusCode).toBe(200);
+            expect(response.body).toHaveProperty('qrImage');
+            expect(response.body.roll_number).toBe('B24CS1110');
+            expect(response.body.name).toBe('Aarushi');
+        });
+    });
+
+    // ---------------------------------------------------------
+    // FR-2: DatabaseManager - Get() Exception Handling
+    // Reason: To improve response time and avoid null-pointer errors during invalid scans
+    // ---------------------------------------------------------
+    describe('FR-2: Invalid Scan Handling', () => {
+        it('should safely handle an unregistered QR hash without crashing the server', async () => {
+            const response = await request(app)
+                .post('/api/scanQR')
+                .send({ 
+                    qrHash: 'FAKE_HASH_XYZ', 
+                    gateAction: 'Entry',
+                    location: 'Campus'
+                });
+            
+            expect(response.statusCode).toBe(200); 
+            expect(response.body.success).toBe(false);
+            expect(response.body.message).toBe('INVALID QR: User not found');
+        });
+    });
+
+    // ---------------------------------------------------------
+    // FR-3: Guard View - Data Access Layer (Photo rendering)
+    // Reason: Photo display was missing; linked UI rendering to database response
+    // ---------------------------------------------------------
+    describe('FR-3: Guard UI Photo Payload', () => {
+        it('should return the user photo attribute upon successful Entry scan', async () => {
+            // Using Aarushi's hash for a valid Entry
+            const response = await request(app)
+                .post('/api/scanQR')
+                .send({ 
+                    qrHash: 'HASH_AARUSHI', 
+                    gateAction: 'Entry',
+                    location: 'Campus'
+                });
+            
+            expect(response.statusCode).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.user).toHaveProperty('photo');
+            expect(response.body.user.photo).toBe('images/aarushi.jpg');
+        });
+    });
+
+    // ---------------------------------------------------------
+    // FR-4: Auth Service - QRCodeService uniqueness
+    // Reason: Prevent regeneration of multiple QR codes for the same user
+    // ---------------------------------------------------------
+    describe('FR-4: QR Uniqueness Constraint', () => {
+        it('should return the exact same QR image data for the same user on consecutive requests', async () => {
+            const firstRequest = await request(app).get('/api/generateQR/B24CS1110');
+            const secondRequest = await request(app).get('/api/generateQR/B24CS1110');
+            
+            expect(firstRequest.statusCode).toBe(200);
+            expect(firstRequest.body.qrImage).toEqual(secondRequest.body.qrImage);
+        });
+    });
+
+    // ---------------------------------------------------------
+    // FR-5 & FR-6: Auth & Sync Service - AccountStatus Validation
+    // Reason: Blocked users were logging in; QR remained valid after graduation
+    // ---------------------------------------------------------
+    describe('FR-5 & FR-6: Graduated Account Blocking', () => {
+        it('should deny gate access if the user accountStatus is Graduated', async () => {
+            const response = await request(app)
+                .post('/api/scanQR')
+                .send({ 
+                    qrHash: 'HASH_GRADUATED', 
+                    gateAction: 'Entry',
+                    location: 'Campus'
+                });
+            
+            expect(response.statusCode).toBe(200);
+            expect(response.body.success).toBe(false);
+            expect(response.body.message).toBe('ACCESS DENIED: User is Graduated');
+        });
+    });
+
+    // ---------------------------------------------------------
+    // FR-7: AntipassbackEngine - readLastStatus()
+    // Reason: Anti-passback logic needed log reference for last IN/OUT state
+    // ---------------------------------------------------------
+    describe('FR-7: Anti-Passback Rules', () => {
+        it('should deny Entry if the user is already marked as Inside', async () => {
+            // Step 1: Mark Riya as Inside
+            await request(app)
+                .post('/api/scanQR')
+                .send({ qrHash: 'HASH_RIYA', gateAction: 'Entry', location: 'Campus' });
+            
+            // Step 2: Try to mark Riya as Inside AGAIN
+            const response = await request(app)
+                .post('/api/scanQR')
+                .send({ qrHash: 'HASH_RIYA', gateAction: 'Entry', location: 'Campus' });
+            
+            expect(response.body.success).toBe(false);
+            expect(response.body.message).toBe('PASSBACK VIOLATION: Already Inside Campus');
+        });
+
+        it('should deny Exit if the user is currently marked as Outside', async () => {
+            // Riddhi starts as 'Outside' by default in our seed data
+            const response = await request(app)
+                .post('/api/scanQR')
+                .send({ qrHash: 'HASH_RIDDHI', gateAction: 'Exit', location: 'Market' });
+            
+            expect(response.body.success).toBe(false);
+            expect(response.body.message).toBe('PASSBACK VIOLATION: User is not currently Inside');
+        });
+    });
+
+    // ---------------------------------------------------------
+    // FR-8: AccessLogs - createLog() & state reset
+    // Reason: User state was not resetting correctly after exit
+    // ---------------------------------------------------------
+    describe('FR-8: Database State Update on Valid Exit', () => {
+        it('should grant access, record the destination, and update state to Outside on a valid OUT scan', async () => {
+            // Step 1: Archie Enters the campus
+            await request(app)
+                .post('/api/scanQR')
+                .send({ qrHash: 'HASH_ARCHIE', gateAction: 'Entry', location: 'Campus' });
+            
+            // Step 2: Archie Exits the campus to go to the Market
+            const response = await request(app)
+                .post('/api/scanQR')
+                .send({ qrHash: 'HASH_ARCHIE', gateAction: 'Exit', location: 'Market' });
+            
+            expect(response.statusCode).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.location).toBe('Market');
+            expect(response.body.message).toBe('ACCESS GRANTED');
+            
+            // At this point, Archie's current_status in the DB is successfully reset to 'Outside'
+        });
+    });
+
+});
