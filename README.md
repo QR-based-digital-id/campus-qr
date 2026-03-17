@@ -36,7 +36,7 @@ Guard Portal Simulation: Open the Guard Portal console and execute the following
 
 onScanSuccess("HASH_AARUSHI") / onScanSuccess("HASH_ARCHIE") - Valid Entry
 
-onScanSuccess("HASH_GRADUATED") - Security Alert 
+onScanSuccess("HASH_GRADUATED") - Security Alert  
   
 **Contributors**  
 -Aarushi Atul Singh  
@@ -59,3 +59,18 @@ Security Logic:
 - **Student Verification:** Validates roll numbers before marking attendance to avoid unauthorized entries.  
 - **QR Code Integration:** Generates unique QR codes for each session to ensure secure attendance marking.
 
+# Testing Instructions
+- *Test Active Students:* Use Roll Numbers B24CS1012 / B24CS1063 / B24CS1066 / B24CS1110 to verify successful attendance marking.
+- *Duplicate Attendance Check:* Scan the same QR code again using the same roll number to confirm that duplicate attendance is blocked.
+- *Simulate Scan:* Open the attendance scanning portal console and run:
+
+  onScanSuccess("HASH_ARCHIE") / 
+  onScanSuccess("HASH_RIDDHI") / 
+  onScanSuccess("HASH_RIYA") / 
+  onScanSuccess("HASH_AARUSHI")
+  
+    to verify attendance recording and the verification panel.
+
+**Contributors**  
+-Riddhi Jain  
+-Riya Dhyawna
