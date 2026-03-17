@@ -12,10 +12,31 @@ Security Logic (SRS FR-5/7):
 -Status Check: Automatically blocks access for Graduated students.  
 -Media Support: Fixed API data-flow to ensure student photos (.jpg) load correctly from the /public/images folder.
 
-**Testing Instructions**  
--Test Active Student: Use Roll Number B24CS1110 / B24CS1012 / B24CS1063/ B24CS1066 to see a successful ID generation.  
--Test Graduated Student: Use Roll Number B20CS0999 to verify the "Access Denied" security trigger.  
--Simulate Scan: Open the Guard Portal console and run onScanSuccess("HASH_AARUSHI") / onScanSuccess("HASH_ARCHIE") / onScanSuccess("HASH_Riddhi") / onScanSuccess("HASH_RIYA") / onScanSuccess("HASH_GRADUATED") to verify the verification panel.  
+# Testing & Quality Assurance
+
+The system is verified through both manual simulation and automated unit testing suites to ensure 100% compliance with Functional (FR) and Non-Functional Requirements (NFR).
+
+# Automated Testing (Jest)
+
+To run the full suite of automated tests (including security logic, anti-passback, and performance benchmarks):
+
+### Navigate to the project folder
+`cd campus-qr`
+
+### Run all tests
+`npm test`
+
+# Manual Testing Instructions
+
+Active Student ID Generation: Use Roll Numbers B24CS1110, B24CS1012, B24CS1063, or B24CS1066 to verify successful QR generation.
+
+Security Trigger (Graduated): Use Roll Number B20CS0999 to verify the "Access Denied" account status blocking.
+
+Guard Portal Simulation: Open the Guard Portal console and execute the following commands to test the verification panel:
+
+onScanSuccess("HASH_AARUSHI") / onScanSuccess("HASH_ARCHIE") - Valid Entry
+
+onScanSuccess("HASH_GRADUATED") - Security Alert 
   
 **Contributors**  
 -Aarushi Atul Singh  
