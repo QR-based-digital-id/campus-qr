@@ -37,7 +37,7 @@ db.serialize(() => {
     // Insert Alpha Team members
     db.get("SELECT COUNT(*) as count FROM Users", (err, row) => {
         if (row.count === 0) {
-            const stmt = db.prepare(`INSERT INTO Users (roll_number, name, role, photo, qr_hash, accountStatus, current_status) 
+            const stmt = db.prepare(`INSERT or IGNORE INTO Users (roll_number, name, role, photo, qr_hash, accountStatus, current_status) 
                                     VALUES (?, ?, ?, ?, ?, ?, ?)`);
 
             // Adding team members from your SRS [cite: 55, 56, 57]

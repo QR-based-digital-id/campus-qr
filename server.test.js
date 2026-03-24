@@ -150,3 +150,68 @@ describe('Campus QR Gate Control API Tests (SRS V2.0)', () => {
     });
 
 });
+
+describe('Attendance System API Tests', () => {
+
+    // ---------------------------------------------------------
+    // FR-11: Course Mapping (subject -> table)
+    // ---------------------------------------------------------
+    describe('FR-11: Subject Mapping', () => {
+        it('should mark attendance in correct subject table', async () => {
+            const response = await request(app)
+                .post('/mark-attendance')
+                .send({
+                    qr_hash: 'HASH_AARUSHI',
+                    subject: 'Software_Engineering'
+                });
+
+            expect(response.statusCode).toBe(200);
+            expect(response.body).toHaveProperty('student');
+            expect(response.body.success).toBe(true);
+        });
+    });
+
+    // ---------------------------------------------------------
+    // FR-13: Duplicate Attendance Prevention
+    // ---------------------------------------------------------
+    describe('FR-13: Duplicate Attendance', () => {
+        it('should not allow marking attendance twice in same session', async () => {
+
+            await request(app)
+                .post('/mark-attendance')
+                .send({
+                    qr_hash: 'HASH_AARUSHI',
+                    subject: 'PRML'
+                });
+
+            const response = await request(app)
+                .post('/mark-attendance')
+                .send({
+                    qr_hash: 'HASH_AARUSHI',
+                    subject: 'PRML'
+                });
+
+            expect(response.body.success).toBe(false);
+            expect(response.body.message).toContain('already marked');
+        });
+    });
+
+    // ---------------------------------------------------------
+    // FR-14: Attendance Record Creation
+    // ---------------------------------------------------------
+    describe('FR-14: Attendance Logging', () => {
+        it('should successfully create a new attendance record', async () => {
+            const response = await request(app)
+                .post('/mark-attendance')
+                .send({
+                    qr_hash: 'HASH_RIDDHI',
+                    subject: 'Thermodynamics'
+                });
+
+            expect(response.statusCode).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.message).toBe('Present');
+        });
+    });
+
+});
