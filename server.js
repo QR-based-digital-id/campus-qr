@@ -139,8 +139,112 @@ app.post('/mark-attendance', (req, res) => {
     });
 });
 
+// ---------------------------------------------------------
+// FR-15: Faculty Dashboard (View Attendance)
+// ---------------------------------------------------------
+app.get('/api/attendance/:subject', (req, res) => {
+    const subject = req.params.subject;
+    const tableName = `attendance_${subject}`;
+
+    db.all(`SELECT * FROM ${tableName}`, [], (err, rows) => {
+        if (err) {
+            return res.json({ success: false, message: 'Error fetching attendance' });
+        }
+
+        res.json({
+            success: true,
+            count: rows.length,
+            data: rows
+        });
+    });
+});
+
+
+// ---------------------------------------------------------
+// FR-16: Modify Attendance (Faculty Correction)
+// ---------------------------------------------------------
+app.post('/api/updateAttendance', (req, res) => {
+    const { roll_number, subject, date, status, reason } = req.body;
+    const tableName = `attendance_${subject}`;
+
+    if (!reason) {
+        return res.json({
+            success: false,
+            message: 'Reason is required for modification'
+        });
+    }
+
+    db.run(
+        `UPDATE ${tableName} SET status = ? WHERE roll_number = ? AND date = ?`,
+        [status, roll_number, date],
+        function (err) {
+            if (err) {
+                return res.json({ success: false, message: 'Update failed' });
+            }
+
+            res.json({
+                success: true,
+                message: 'Attendance updated successfully',
+                changes: this.changes,
+                reason: reason
+            });
+        }
+    );
+});
+
+
+// ---------------------------------------------------------
+// FR-17: Attendance Percentage Calculation
+// ---------------------------------------------------------
+app.get('/api/attendancePercentage/:roll_number/:subject', (req, res) => {
+    const { roll_number, subject } = req.params;
+    const tableName = `attendance_${subject}`;
+
+    db.all(
+        `SELECT * FROM ${tableName} WHERE roll_number = ?`,
+        [roll_number],
+        (err, rows) => {
+            if (err) {
+                return res.json({ success: false, message: 'Error calculating percentage' });
+            }
+
+            if (rows.length === 0) {
+                return res.json({
+                    success: true,
+                    percentage: 0,
+                    totalClasses: 0,
+                    attended: 0
+                });
+            }
+
+            const total = rows.length;
+            const attended = rows.filter(r => r.status === 1).length;
+            const percentage = ((attended / total) * 100).toFixed(2);
+
+            res.json({
+                success: true,
+                roll_number,
+                subject,
+                totalClasses: total,
+                attended: attended,
+                percentage: Number(percentage)
+            });
+        }
+    );
+});
+
+
+// ---------------- EXPORT ----------------
+if (require.main === module) {
+    app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
+}
+module.exports = app;
 // Export the app for testing, but only listen to the port if running directly
 if (require.main === module) {
     app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
 }
 module.exports = app;
+
+
+
+

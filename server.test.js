@@ -213,5 +213,91 @@ describe('Attendance System API Tests', () => {
             expect(response.body.message).toBe('Present');
         });
     });
+// ---------------------------------------------------------
+// FACULTY FEATURES TESTING (FR-15 to FR-17)
+// ---------------------------------------------------------
 
+describe('Faculty Features API Tests (FR-15 to FR-17)', () => {
+
+    // ---------------------------------------------------------
+    // FR-15: Faculty Dashboard (View Attendance)
+    // ---------------------------------------------------------
+    describe('FR-15: Faculty Dashboard', () => {
+        it('should fetch attendance records for a subject', async () => {
+
+            const res = await request(app)
+                .get('/api/attendance/PRML');
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.success).toBe(true);
+            expect(res.body).toHaveProperty('data');
+        });
+    });
+
+    // ---------------------------------------------------------
+    // FR-16: Modify Attendance
+    // ---------------------------------------------------------
+    describe('FR-16: Modify Attendance', () => {
+        it('should update attendance with a valid reason', async () => {
+
+            const today = new Date().toISOString().split('T')[0];
+
+            const res = await request(app)
+                .post('/api/updateAttendance')
+                .send({
+                    roll_number: 'B24CS1110',
+                    subject: 'PRML',
+                    date: today,
+                    status: 1,
+                    reason: 'Medical'
+                });
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.success).toBe(true);
+            expect(res.body.message).toBe('Attendance updated successfully');
+        });
+
+        it('should fail update without reason', async () => {
+
+            const today = new Date().toISOString().split('T')[0];
+
+            const res = await request(app)
+                .post('/api/updateAttendance')
+                .send({
+                    roll_number: 'B24CS1110',
+                    subject: 'PRML',
+                    date: today,
+                    status: 1
+                });
+
+            expect(res.body.success).toBe(false);
+            expect(res.body.message).toBe('Reason is required for modification');
+        });
+    });
+
+    // ---------------------------------------------------------
+    // FR-17: Attendance Percentage
+    // ---------------------------------------------------------
+    describe('FR-17: Attendance Percentage', () => {
+        it('should calculate attendance percentage correctly', async () => {
+
+            const res = await request(app)
+                .get('/api/attendancePercentage/B24CS1110/PRML');
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.success).toBe(true);
+            expect(res.body).toHaveProperty('percentage');
+        });
+
+        it('should return 0% for student with no records', async () => {
+
+            const res = await request(app)
+                .get('/api/attendancePercentage/FAKE_ID/PRML');
+
+            expect(res.body.success).toBe(true);
+            expect(res.body.percentage).toBe(0);
+        });
+    });
+
+});
 });
