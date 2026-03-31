@@ -213,15 +213,11 @@ describe('Attendance System API Tests', () => {
             expect(response.body.message).toBe('Present');
         });
     });
-// ---------------------------------------------------------
-// FACULTY FEATURES TESTING (FR-15 to FR-17)
-// ---------------------------------------------------------
+// FACULTY FEATURES TESTING 
 
 describe('Faculty Features API Tests (FR-15 to FR-17)', () => {
 
-    // ---------------------------------------------------------
     // FR-15: Faculty Dashboard (View Attendance)
-    // ---------------------------------------------------------
     describe('FR-15: Faculty Dashboard', () => {
         it('should fetch attendance records for a subject', async () => {
 
@@ -234,9 +230,7 @@ describe('Faculty Features API Tests (FR-15 to FR-17)', () => {
         });
     });
 
-    // ---------------------------------------------------------
     // FR-16: Modify Attendance
-    // ---------------------------------------------------------
     describe('FR-16: Modify Attendance', () => {
         it('should update attendance with a valid reason', async () => {
 
@@ -275,9 +269,7 @@ describe('Faculty Features API Tests (FR-15 to FR-17)', () => {
         });
     });
 
-    // ---------------------------------------------------------
     // FR-17: Attendance Percentage
-    // ---------------------------------------------------------
     describe('FR-17: Attendance Percentage', () => {
         it('should calculate attendance percentage correctly', async () => {
 
@@ -298,6 +290,58 @@ describe('Faculty Features API Tests (FR-15 to FR-17)', () => {
             expect(res.body.percentage).toBe(0);
         });
     });
+describe('FR-18: Attendance Report Generation', () => {
 
+    test('should return attendance report for a course', async () => {
+        const response = await request(app)
+            .get('/api/attendance/report?courseId=CS101');
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body).toHaveProperty('report');
+        expect(Array.isArray(response.body.report)).toBe(true);
+    });
+
+    test('should fail if courseId missing', async () => {
+        const response = await request(app)
+            .get('/api/attendance/report');
+
+        expect(response.statusCode).toBe(400);
+    });
+
+});
+describe('FR-19: Attendance Search and Filter', () => {
+
+    test('should filter attendance by studentId', async () => {
+        const response = await request(app)
+            .get('/api/attendance/search?studentId=B24CS1063');
+
+        expect(response.statusCode).toBe(200);
+        expect(Array.isArray(response.body.results)).toBe(true);
+    });
+
+    test('should return empty if no match found', async () => {
+        const response = await request(app)
+            .get('/api/attendance/search?studentId=INVALID');
+
+        expect(response.statusCode).toBe(200);
+    });
+
+});
+describe('FR-20: Error Handling for Invalid QR', () => {
+
+    test('should return error for invalid QR', async () => {
+        const response = await request(app)
+            .post('/api/scanQR')
+            .send({
+                qrHash: 'INVALID_HASH',
+                gateAction: 'Entry',
+                location: 'Campus'
+            });
+
+        expect(response.statusCode).toBe(400);
+        expect(response.body.success).toBe(false);
+    });
+
+});
 });
 });
