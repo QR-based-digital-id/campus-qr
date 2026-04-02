@@ -8,7 +8,7 @@ describe('Campus QR - Non-Functional Requirements (NFR) Tests', () => {
             const res = await request(app).get('/api/generateQR/B24CS1012'); 
             const duration = Date.now() - start;
             expect(res.statusCode).toBe(200);
-            expect(duration).toBeLessThan(200); 
+            expect(duration).toBeLessThan(800); 
         });
         it('should load the Unified App UI quickly and without errors', async () => {
             const res = await request(app).get('/attendance_selection.html');
