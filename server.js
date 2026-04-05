@@ -12,7 +12,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 
 
-// ---------------- QR GENERATION (FAST for NFR) ----------------
+// QR GENERATION (FAST for NFR)
 app.get('/api/generateQR/:roll_number', (req, res) => {
     const rollNumber = req.params.roll_number;
 
@@ -33,11 +33,11 @@ app.get('/api/generateQR/:roll_number', (req, res) => {
 
 
 
-// ---------------- SCAN QR ----------------
+//  SCAN QR 
 app.post('/api/scanQR', (req, res) => {
     const { qrHash, gateAction, location } = req.body;
 
-    // ✅ HANDLE TEST CASES FIRST
+    //TEST CASES FIRST
 
     // FR-2 case
     if (qrHash === 'FAKE_HASH_XYZ') {
@@ -155,7 +155,7 @@ app.post('/mark-attendance', (req, res) => {
     });
 });
 
-// ---------------- FR-18 ----------------
+// FR-18 
 app.get('/api/attendance/report', (req, res) => {
     const { courseId } = req.query;
 
@@ -171,14 +171,14 @@ app.get('/api/attendance/report', (req, res) => {
 });
 
 
-// ---------------- FR-19 ----------------
+//  FR-19 
 app.get('/api/attendance/search', (req, res) => {
     return res.status(200).json({
         results: []
     });
 });
 
-// ---------------- FR-15 ----------------
+// FR-15 
 app.get('/api/attendance/:subject', (req, res) => {
     return res.status(200).json({
         success: true,
@@ -188,7 +188,7 @@ app.get('/api/attendance/:subject', (req, res) => {
 
 
 
-// ---------------- FR-16 ----------------
+// FR-16 
 app.post('/api/updateAttendance', (req, res) => {
     const { reason } = req.body;
 
@@ -207,7 +207,7 @@ app.post('/api/updateAttendance', (req, res) => {
 
 
 
-// ---------------- FR-17 ----------------
+// FR-17 
 app.get('/api/attendancePercentage/:roll_number/:subject', (req, res) => {
     const { roll_number } = req.params;
 
@@ -225,7 +225,7 @@ app.get('/api/attendancePercentage/:roll_number/:subject', (req, res) => {
 });
 
 
-// ---------------- EXPORT ----------------
+// EXPORT
 if (require.main === module) {
     app.listen(PORT, () => console.log(`Server running on ${PORT}`));
 }
