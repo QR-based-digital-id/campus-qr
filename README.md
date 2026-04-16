@@ -16,6 +16,11 @@ Security Logic (SRS FR-5/7):
 
 The system is verified through both manual simulation and automated unit testing suites to ensure 100% compliance with Functional (FR) and Non-Functional Requirements (NFR).
 
+
+# Testing
+
+Part of continuous integration with GitHub Actions.
+
 # Automated Testing (Jest)
 
 To run the full suite of automated tests (including security logic, anti-passback, and performance benchmarks):
