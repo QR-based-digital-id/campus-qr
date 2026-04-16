@@ -34,23 +34,18 @@ db.serialize(() => {
         )`);
     });
 
-    // Insert Alpha Team members
-    db.get("SELECT COUNT(*) as count FROM Users", (err, row) => {
-        if (row.count === 0) {
-            const stmt = db.prepare(`INSERT or IGNORE INTO Users (roll_number, name, role, photo, qr_hash, accountStatus, current_status) 
-                                    VALUES (?, ?, ?, ?, ?, ?, ?)`);
+    // Synchronous execution using INSERT OR IGNORE completely eliminates the async race condition.
+    const stmt = db.prepare(`INSERT OR IGNORE INTO Users (roll_number, name, role, photo, qr_hash, accountStatus, current_status) 
+                             VALUES (?, ?, ?, ?, ?, ?, ?)`);
 
-            // Adding team members from your SRS [cite: 55, 56, 57]
-            stmt.run("B24CS1110", "Aarushi", "Student", "images/aarushi.jpg", "HASH_AARUSHI", "Active", "Outside");
-            stmt.run("B24CS1066", "Riya", "Student", "images/riya.jpg", "HASH_RIYA", "Active", "Outside");
-            stmt.run("B24CS1012", "Archie", "Student", "images/archie.jpg", "HASH_ARCHIE", "Active", "Outside");
-            stmt.run("B24CS1063", "Riddhi", "Student", "images/riddhi.jpg", "HASH_RIDDHI", "Active", "Outside");
-            stmt.run("B20CS0999", "Ex-Student", "Student", null, "HASH_GRADUATED", "Graduated", "Outside");
+    stmt.run("B24CS1110", "Aarushi", "Student", "images/aarushi.jpg", "HASH_AARUSHI", "Active", "Outside");
+    stmt.run("B24CS1066", "Riya", "Student", "images/riya.jpg", "HASH_RIYA", "Active", "Outside");
+    stmt.run("B24CS1012", "Archie", "Student", "images/archie.jpg", "HASH_ARCHIE", "Active", "Outside");
+    stmt.run("B24CS1063", "Riddhi", "Student", "images/riddhi.jpg", "HASH_RIDDHI", "Active", "Outside");
+    stmt.run("B20CS0999", "Ex-Student", "Student", null, "HASH_GRADUATED", "Graduated", "Outside");
 
-            stmt.finalize();
-            console.log("Database seeded with Alpha Team members.");
-        }
-    });
+    stmt.finalize();
+    console.log("Database schema initialized and Alpha Team seeded (if not exists).");
 });
 
 module.exports = db;
