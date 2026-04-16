@@ -1,0 +1,37 @@
+name: Campus QR Automated QA Pipeline
+
+# This tells GitHub WHEN to run the tests
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-suite:
+    name: Run Jest & Supertest
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x] # Tests across two stable Node environments
+
+    steps:
+    #pulls code to cloud server
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    #installs Node.js on the cloud server
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    #installs the dependencies (Express, Jest, Supertest, SQLite3, CORS)
+    - name: Install Dependencies
+      run: npm install
+
+    #Runs the actual testing suites (server.test.js & nfr.test.js)
+    - name: Execute Test Suites
+      run: npm test
