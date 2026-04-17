@@ -54,19 +54,6 @@ app.post('/api/scanQR', (req, res) => {
         });
     }
 
-    if (qrHash === 'HASH_AARUSHI') {
-        return res.status(200).json({
-            success: true,
-            message: "ACCESS GRANTED",
-            location: location || 'Campus',
-            user: {
-                name: "Aarushi",
-                roll_number: "B24CS1110",
-                photo: "images/aarushi.jpg",
-                accountStatus: "Active"
-            }
-        });
-    }
 
     db.get(`SELECT * FROM Users WHERE qr_hash = ?`, [qrHash], (err, user) => {
         if (!user) {
