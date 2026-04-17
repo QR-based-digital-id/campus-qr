@@ -169,7 +169,7 @@ app.post('/mark-attendance', (req, res) => {
         // SECOND TIME SCANNING (Duplicate)
         return res.status(200).json({
             success: false,
-            message: "Already marked present",
+            message: "already marked present",
             student: { 
                     roll_number: user.roll_number, // Real roll number
                     name: user.name,              // Real name 
