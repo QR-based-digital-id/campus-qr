@@ -151,6 +151,42 @@ describe('Campus QR Gate Control API Tests (SRS V2.0)', () => {
 
 });
 
+// ---------------------------------------------------------
+    // FR-9: Manual Guard Override (TR-02 Fallback)
+    // Reason: Allows guards to force entry/exit if scanner fails
+    // ---------------------------------------------------------
+    describe('FR-9: Manual Guard Override', () => {
+        it('should force entry and bypass anti-passback for a valid roll number', async () => {
+            const response = await request(app)
+                .post('/api/manual-override')
+                .send({
+                    roll_number: 'B24CS1012', // Archie's ID
+                    gateAction: 'Entry',
+                    reason: 'Damaged ID Card',
+                    guardId: 'GUARD_99'
+                });
+
+            expect(response.statusCode).toBe(200);
+            expect(response.body.success).toBe(true);
+            expect(response.body.message).toContain('MANUAL OVERRIDE SUCCESS');
+        });
+
+        it('should return an error if the manual override roll number does not exist', async () => {
+            const response = await request(app)
+                .post('/api/manual-override')
+                .send({
+                    roll_number: 'INVALID_ROLL_999',
+                    gateAction: 'Exit',
+                    reason: 'Testing',
+                    guardId: 'GUARD_99'
+                });
+
+            expect(response.statusCode).toBe(200);
+            expect(response.body.success).toBe(false);
+            expect(response.body.message).toBe('Student not found in database.');
+        });
+    });
+
 describe('Attendance System API Tests', () => {
 
     // ---------------------------------------------------------
