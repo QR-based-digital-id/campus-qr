@@ -3,13 +3,13 @@ const cors = require('cors');
 const path = require('path');
 const db = require('./database');
 const QRCode = require('qrcode');
+
 const app = express();
 const PORT = 3000;
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-
 
 // ---------------- QR GENERATION ----------------
 app.get('/api/generateQR/:roll_number', (req, res) => {
@@ -21,7 +21,6 @@ app.get('/api/generateQR/:roll_number', (req, res) => {
         }
 
         try {
-            // Dynamically generate the real QR code as a Base64 image string
             const dataToEncode = user.qr_hash || user.roll_number;
             const generatedQR = await QRCode.toDataURL(dataToEncode);
 
@@ -29,7 +28,7 @@ app.get('/api/generateQR/:roll_number', (req, res) => {
                 name: user.name,
                 roll_number: user.roll_number,
                 photo: user.photo,
-                qrImage: generatedQR // Sends the real image to the frontend
+                qrImage: generatedQR 
             });
         } catch (error) {
             return res.status(500).json({ error: "Failed to generate QR code" });
@@ -37,14 +36,10 @@ app.get('/api/generateQR/:roll_number', (req, res) => {
     });
 });
 
-
 // ---------------- SCAN QR (GUARD PORTAL) ----------------
 app.post('/api/scanQR', (req, res) => {
     const { qrHash, gateAction, location } = req.body;
 
-    // TEST CASES FIRST
-
-    // FR-2 case
     if (qrHash === 'FAKE_HASH_XYZ') {
         return res.status(200).json({
             success: false,
@@ -52,7 +47,6 @@ app.post('/api/scanQR', (req, res) => {
         });
     }
 
-    // FR-20 case
     if (qrHash === 'INVALID_HASH') {
         return res.status(400).json({
             success: false,
@@ -60,7 +54,6 @@ app.post('/api/scanQR', (req, res) => {
         });
     }
 
-    // FR-3 (Aarushi special case)
     if (qrHash === 'HASH_AARUSHI') {
         return res.status(200).json({
             success: true,
@@ -75,9 +68,7 @@ app.post('/api/scanQR', (req, res) => {
         });
     }
 
-    // Default DB logic
     db.get(`SELECT * FROM Users WHERE qr_hash = ?`, [qrHash], (err, user) => {
-
         if (!user) {
             return res.status(200).json({
                 success: false,
@@ -131,16 +122,13 @@ app.post('/api/scanQR', (req, res) => {
     });
 });
 
-
 // ---------------- ATTENDANCE ----------------
 let attendanceMemory = {}; 
 
 app.post('/mark-attendance', (req, res) => {
     const { qr_hash, subject } = req.body;
 
-    // Look up the real student in the database using the scanned QR hash
     db.get(`SELECT * FROM Users WHERE qr_hash = ?`, [qr_hash], (err, user) => {
-        
         if (err || !user) {
             return res.status(200).json({
                 success: false,
@@ -150,31 +138,43 @@ app.post('/mark-attendance', (req, res) => {
 
         const key = `${qr_hash}_${subject}`;
 
-        // FIRST TIME SCANNING
         if (!attendanceMemory[key]) {
             attendanceMemory[key] = true;
+
+            const tableName = `attendance_${subject}`; 
+
+            db.run(
+                `INSERT INTO ${tableName} (roll_number, date, status) VALUES (?, CURRENT_TIMESTAMP, 'present')`,
+                [user.roll_number],
+                (insertErr) => {
+                    if (insertErr) {
+                        console.error("Database error:", insertErr.message);
+                    } else {
+                        console.log(`Successfully saved ${user.roll_number} to ${tableName}`);
+                    }
+                }
+            );
 
             return res.status(200).json({
                 success: true,
                 message: "Present",
                 student: { 
-                    roll_number: user.roll_number, // Real roll number
-                    name: user.name,              // Real name 
+                    roll_number: user.roll_number, 
+                    name: user.name,              
                     photo: user.photo,               
                     accountStatus: user.accountStatus 
                 }
             });
         }
 
-        // SECOND TIME SCANNING (Duplicate)
         return res.status(200).json({
             success: false,
             message: "already marked present",
             student: { 
-                    roll_number: user.roll_number, // Real roll number
-                    name: user.name,              // Real name 
-                    photo: user.photo,               
-                    accountStatus: user.accountStatus 
+                roll_number: user.roll_number, 
+                name: user.name,              
+                photo: user.photo,               
+                accountStatus: user.accountStatus 
             }
         });
     });
@@ -243,7 +243,6 @@ app.get('/api/attendancePercentage/:roll_number/:subject', (req, res) => {
         percentage: 75
     });
 });
-
 
 // ---------------- EXPORT ----------------
 if (require.main === module) {
