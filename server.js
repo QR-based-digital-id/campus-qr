@@ -125,6 +125,41 @@ app.post('/api/scanQR', (req, res) => {
 // ---------------- ATTENDANCE ----------------
 let attendanceMemory = {}; 
 
+// ---------------- MANUAL OVERRIDE (FR-9 / TR-02 Fallback) ----------------
+app.post('/api/manual-override', (req, res) => {
+    const { roll_number, gateAction, reason, guardId } = req.body;
+
+    // 1. Find the student by Roll Number (Not QR Hash)
+    db.get(`SELECT * FROM Users WHERE roll_number = ?`, [roll_number], (err, user) => {
+        if (err || !user) {
+            return res.status(200).json({ success: false, message: "Student not found in database." });
+        }
+
+        // 2. Force the new status based on the guard's action
+        const newStatus = gateAction === 'Entry' ? 'Inside' : 'Outside';
+
+        db.serialize(() => {
+            // Update their physical status
+            db.run(`UPDATE Users SET current_status = ? WHERE roll_number = ?`,
+                [newStatus, user.roll_number]);
+
+            // 3. Log it specially as an OVERRIDE with the reason
+            db.run(`INSERT INTO AccessLogs (roll_number, scan_type, location) VALUES (?, ?, ?)`,
+                [user.roll_number, `OVERRIDE_${gateAction}`, `Reason: ${reason} (Guard: ${guardId})`]);
+        });
+
+        res.json({
+            success: true,
+            message: `MANUAL OVERRIDE SUCCESS: Forced ${gateAction}`,
+            user: {
+                name: user.name,
+                roll_number: user.roll_number,
+                photo: user.photo
+            }
+        });
+    });
+});
+
 app.post('/mark-attendance', (req, res) => {
     const { qr_hash, subject } = req.body;
 
