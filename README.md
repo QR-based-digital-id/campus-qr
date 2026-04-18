@@ -79,3 +79,5 @@ Security Logic:
 **Contributors**  
 -Riddhi Jain  
 -Riya Dhyawna
+
+**Deployed website(Demo)**- https://campus-qr.onrender.com/
